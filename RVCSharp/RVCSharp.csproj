@@ -8,8 +8,7 @@
 
   <ItemGroup>
     <PackageReference Include="MathNet.Numerics" Version="6.0.0-beta2" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime" Version="1.21.0" />
-    <PackageReference Include="Microsoft.ML.OnnxRuntime.DirectML" Version="1.21.0" />
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Managed" Version="1.21.0" />
     <PackageReference Include="NAudio" Version="2.2.1" />
   </ItemGroup>
 

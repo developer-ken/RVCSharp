@@ -13,6 +13,10 @@ namespace RVCSharp.AudioProcess
         public static float[] LoadWav(string path, int sampleRate)
         {
             using var reader = new AudioFileReader(path);
+            //if(!(reader.WaveFormat.BitsPerSample == 16 || (reader.WaveFormat.BitsPerSample == 32 && reader.WaveFormat.Channels == 2)))
+            //{
+            //    throw new ArgumentException("Only 16-bit audio files are supported.");
+            //}
             var resampler = new WdlResamplingSampleProvider(reader, sampleRate);
             var samples = new float[reader.Length / sizeof(float)];
             resampler.Read(samples, 0, samples.Length);
@@ -56,7 +60,7 @@ namespace RVCSharp.AudioProcess
         public static float[][] Segment(float[] input, int unitsize, double overlap = 0.05)
         {
             int newusize = (int)Math.Ceiling(unitsize * (1 - overlap));
-            int numFrames = input.Length / newusize;
+            int numFrames = (int)Math.Ceiling((float)input.Length / (float)newusize);
             float[][] frames = new float[numFrames][];
             for (int i = 0; i < numFrames; i++)
             {
@@ -76,14 +80,17 @@ namespace RVCSharp.AudioProcess
             {
                 if (resultp == 0)  //第一片段，直接拼接
                 {
-                    for (int i = 0; i < segment.Length; i++)
+                    Console.WriteLine("F:" + resultp + " -> " + segment.Length);
+                    for (int i = resultp; i < resultp + segment.Length && i<result.Length; i++)
                     {
-                        result[i] = segment[i];
+                        result[i] = segment[i - resultp];
                     }
                     resultp += shorterlen;
                 }
                 else
-                {   //非第一片段，先计算重叠位置的平滑过渡
+                {
+                    Console.WriteLine("O:" + resultp + " -> " + (resultp + overlapped));
+                    //非第一片段，先计算重叠位置的平滑过渡
                     for (int i = resultp; i < resultp + overlapped; i++)
                     {
                         float ratio = (i - resultp) / overlapped;
@@ -91,11 +98,15 @@ namespace RVCSharp.AudioProcess
                     }
                     resultp += overlapped;
 
+                    Console.WriteLine("S:" + resultp + " -> " + (resultp + shorterlen));
                     //然后拼接后续部分
                     for (int i = resultp; i < resultp + shorterlen; i++)
                     {
-                        result[i] = segment[i + overlapped];
+                        if (i >= result.Length) break;
+                        if (i - resultp + overlapped >= segment.Length) break;
+                        result[i] = segment[i - resultp + overlapped];
                     }
+                    resultp += shorterlen - overlapped;
                 }
             }
             return result;

@@ -55,15 +55,24 @@ namespace RVCSharp.ML
             return output.Select(x => (short)(x * 32767)).ToArray();
         }
 
-        public float[] Inference(string rawPath, int sid, IF0Predictor f0Predictor, int f0UpKey = 0, double padTime = 0.5, double crThreshold = 0.02)
+        public float[] Inference(string rawPath, int sid, IF0Predictor f0Predictor, int f0UpKey = 0)
         {
-            var wav = AudioProc.LoadWav(rawPath, _samplingRate);
-            int orgLength = wav.Length;
-            var wav16k = AudioProc.Resample(wav, _samplingRate, 16000);
-            return Inference(wav16k, sid, f0Predictor, f0UpKey, padTime, crThreshold).Take(orgLength).ToArray();
+            var rawwav = AudioProc.LoadWav(rawPath, _samplingRate);
+            var seg = AudioProc.Segment(rawwav, _samplingRate * 10, 0.1);
+            for (int i = 0; i < seg.Length; i++)
+            {
+                DateTime start = DateTime.Now;
+                Console.Write($"Processing segment ({i}/{seg.Length})... ");
+                var orgLength = seg[i].Length;
+                var wav16k = AudioProc.Resample(seg[i], _samplingRate, 16000);
+                seg[i] = Inference(wav16k, sid, f0Predictor, f0UpKey).Take(orgLength).ToArray();
+                float secs = (float)(DateTime.Now - start).TotalSeconds;
+                Console.WriteLine($"{secs.ToString("0.00")}s - " + ((secs < 10) ? "realtime" : "slow"));
+            }
+            return AudioProc.MergeSegments(seg, 0.1);
         }
 
-        public float[] Inference(float[] wav16k, int sid, IF0Predictor f0Predictor, int f0UpKey = 0, double padTime = 0.5, double crThreshold = 0.02)
+        public float[] Inference(float[] wav16k, int sid, IF0Predictor f0Predictor, int f0UpKey = 0)
         {
             const int f0Min = 50;
             const int f0Max = 1100;

@@ -10,6 +10,10 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="Microsoft.ML.OnnxRuntime.Gpu" Version="1.20.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\RVCSharp\RVCSharp.csproj" />
   </ItemGroup>
 
