@@ -29,7 +29,7 @@ namespace RVCSharp.ML.F0Predictor
 
             for (int i = 0; i < numFrames; i++)
             {
-                float[] frame = audioData.Skip(i * frameLength).Take(frameLength).ToArray();
+                float[] frame = audioData.Skip(i * frameLength).Take((int)(frameLength * 1.5)).ToArray();
                 f0[i] = ComputeF0ForFrame(frame);
             }
             return f0;

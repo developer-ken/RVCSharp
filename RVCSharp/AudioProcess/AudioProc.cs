@@ -18,14 +18,15 @@ namespace RVCSharp.AudioProcess
             //    throw new ArgumentException("Only 16-bit audio files are supported.");
             //}
             var resampler = new WdlResamplingSampleProvider(reader, sampleRate);
-            var samples = new float[reader.Length / sizeof(float)];
+            var samples = new float[reader.Length / reader.WaveFormat.Channels / sizeof(float)];
             resampler.Read(samples, 0, samples.Length);
+            reader.Close();
             return samples;
         }
 
         public static void SaveWav(float[] samples, string path, int target_samplerate = 44100, int samplerate = 48000)
         {
-            using var writer = new WaveFileWriter(path, new WaveFormat(samplerate, 16, 1));
+            using var writer = new WaveFileWriter(path, new WaveFormat(target_samplerate, 16, 1));
             var resampler = new WdlResamplingSampleProvider(new ArraySampleProvider(samples, samplerate), target_samplerate);
             var buffer = new float[1024];
             while (resampler.Read(buffer, 0, buffer.Length) > 0)
@@ -59,7 +60,7 @@ namespace RVCSharp.AudioProcess
 
         public static float[][] Segment(float[] input, int unitsize, double overlap = 0.05)
         {
-            int newusize = (int)Math.Ceiling(unitsize * (1 - overlap));
+            int newusize = (int)Math.Floor(unitsize * (1 - overlap));
             int numFrames = (int)Math.Ceiling((float)input.Length / (float)newusize);
             float[][] frames = new float[numFrames][];
             for (int i = 0; i < numFrames; i++)
@@ -81,7 +82,7 @@ namespace RVCSharp.AudioProcess
                 if (resultp == 0)  //第一片段，直接拼接
                 {
                     Console.WriteLine("F:" + resultp + " -> " + segment.Length);
-                    for (int i = resultp; i < resultp + segment.Length && i<result.Length; i++)
+                    for (int i = resultp; i < resultp + segment.Length && i < result.Length; i++)
                     {
                         result[i] = segment[i - resultp];
                     }
